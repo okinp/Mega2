@@ -2,14 +2,8 @@
 
 //--------------------------------------------------------------
 void ofApp::setup(){
-	ofSetVerticalSync(true);
+	//ofSetVerticalSync(true);
 	calcHomography.addListener(this, &ofApp::calculateHomography);
-
-
-	//cameraResolution.addListener(this, &ofApp::cameraResolutionChanged);
-	//videoScaling.addListener(this, &ofApp::videoScalingChanged);
-	//windowSize.addListener(this, &ofApp::windowSizeChanged);
-
 	setupGui();
 	gui.loadFromFile("settings.xml");
 	gui.setPosition(680, 20);
@@ -24,6 +18,7 @@ void ofApp::setup(){
 	int w = 1280;
 	int h = 720;
 	ofSetWindowShape(w, h);
+	
 	mShader.load("shaderClouds");
 	backImage.loadImage("backImage.png");
 	backImage.bind(3);
@@ -36,20 +31,19 @@ void ofApp::setup(){
 	homographyReady = false;
 	// load the previous homography if it's available
 	ofFile previous("homography.yml");
-	/*
 	if (previous.exists()) {
 		cv::FileStorage fs(ofToDataPath("homography.yml"), cv::FileStorage::READ);
 		fs["homography"] >> homography;
 		homographyReady = true;
 		ofLogNotice() << "Loaded homography";
 		homographyExists = true;
-	}*/
+	}
 
 
 
 	setupCamera();
 
-	/*setupHomography();*/
+	setupHomography();
 	faceFinder.setup("haarcascade_frontalface_alt.xml");
 
 	mFboMask.allocate(winSize.x, winSize.y);
@@ -202,13 +196,13 @@ void ofApp::updateCamera()
 {
 	vidGrabber.update();
 
-	//if (vidGrabber.isFrameNew()) {
-	//	if (!mCameraStarted)
-	//	{
-	//		mCameraStarted = true;
-	//	}
-	//	//findFaces();
-	//}
+	if (vidGrabber.isFrameNew()) {
+		if (!mCameraStarted)
+		{
+			mCameraStarted = true;
+		}
+		findFaces();
+	}
 }
 
 void ofApp::findFaces()
@@ -243,30 +237,28 @@ void ofApp::findFaces()
 //--------------------------------------------------------------
 void ofApp::update() {
 	updateCamera();
-	//applyHomography();
+	applyHomography();
 }
 //--------------------------------------------------------------
 void ofApp::draw(){
-	/* if (showDebug)
+	if (showDebug)
 	{
 		drawDebugView();
 	}
-	else {*/
+	else {
 		//Render circles to FBO
-		//ofFill();
-		//mFboMask.begin();
-		//ofClear(ofColor::black);
-		//ofSetColor(ofColor::white);
-		//for (int i = 0; i < mBalls.size(); i++)
-		//{
-		//	mBalls[i].draw();
-		//}
-		//mFboMask.end();
-		//ofNoFill();
-		//mFboMask.getTextureReference().bind(1);
-		//
-	if (true)
-	{
+		ofFill();
+		mFboMask.begin();
+		ofClear(ofColor::black);
+		ofSetColor(ofColor::white);
+		for (int i = 0; i < mBalls.size(); i++)
+		{
+			mBalls[i].draw();
+		}
+		mFboMask.end();
+		ofNoFill();
+		mFboMask.getTextureReference().bind(4);
+
 		mShader.begin();
 		ofClear(ofColor::black);
 		mPlane.draw();
@@ -275,11 +267,9 @@ void ofApp::draw(){
 		mShader.setUniform2f("iResolution", ofVec2f(ofGetWindowWidth(), ofGetWindowHeight()));
 		mShader.setUniform4f("iMouse", ofVec4f(ofGetMouseX(), ofGetMouseY(), 0, 0));
 		mShader.setUniformTexture("iChannel0", backImage.getTextureReference(), 3);
-		//mShader.setUniformTexture("imageMask", mFboMask.getTextureReference(), 1);
+		mShader.setUniformTexture("imageMask", mFboMask.getTextureReference(), 4);
 		mShader.end();
-		showNext = false;
 	}
-	/*}*/
 }
 
 void ofApp::exit()
@@ -329,10 +319,6 @@ void ofApp::keyPressed(int key){
 	}
 	if (key == 'l') {
 		gui.loadFromFile("settings.xml");
-	}
-	if (key == 'q')
-	{
-		showNext = true;
 	}
 }
 

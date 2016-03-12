@@ -81,5 +81,4 @@ class ofApp : public ofBaseApp{
 		vector<kyra::Ball> mBalls;
 		vector<ofRectangle> mFaceRects;
 		bool homographyExists = false;
-		bool showNext = false;
 };

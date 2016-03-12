@@ -4,7 +4,7 @@ uniform vec2			iResolution;
 uniform float			iGlobalTime;
 uniform vec4			iMouse;
 uniform sampler2DRect	iChannel0;
-//uniform	sampler2DRect	imageMask;
+uniform	sampler2DRect	imageMask;
 
 out vec4 outputColor;
 
@@ -102,7 +102,12 @@ void main (void)
 	//fragCol = 0.8*fragCol + 0.3*vec4(0.2,0.2,0.2,1);
 	//bri = fragCol.r;
 	//bri = pow(bri, 1.15);
-	
-	fragCol = mix(fragCol,texture(iChannel0, texCoordVarying), 1.1*bri );
+	vec4 colBackground = texture(iChannel0, texCoordVarying);
+	if ( texture(imageMask, texCoordVarying).r == 1 )
+	{
+		fragCol = mix(fragCol,colBackground, 2.6*bri );;
+	} else {
+		fragCol = mix(fragCol,colBackground, 1.1*bri );
+	}
 	outputColor = fragCol;
 }
