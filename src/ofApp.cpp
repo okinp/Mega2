@@ -11,8 +11,6 @@ void ofApp::setup(){
 	setupGui();
 	gui.loadFromFile("settings.xml");
 	gui.setPosition(680, 20);
-
-
 	scalingFactor = videoScaling.get();
 	ofVec2f camSize = cameraResolution.get();
 	camWidth = camSize.x;
@@ -20,12 +18,11 @@ void ofApp::setup(){
 	resizedImage.allocate(camWidth / scalingFactor, camHeight / scalingFactor, OF_IMAGE_COLOR);
 	winSize = windowSize.get();
 	ofSetWindowShape(winSize.x, winSize.y);
-	mShader.load("shader");
-	backImage.getTextureReference().bind(0);
+	mShader.load("shaderClouds");
+	backImage.bind(0);
 	mPlane = ofPlanePrimitive(winSize.x, winSize.y, 2, 2);
 	mPlane.mapTexCoordsFromTexture(backImage.getTextureReference());
-	mPlane.setPosition(winSize.x/2, winSize.x/2, 0);
-
+	mPlane.setPosition(winSize.x/2, winSize.y/2,0);
 
 	debugCameraScaling = 2.f;  // ( 0.5 )
 	movingPoint = false;
@@ -247,35 +244,29 @@ void ofApp::draw(){
 		drawDebugView();
 	}
 	else {
-		//backImage.draw(0, 0);
 		//Render circles to FBO
-		ofFill();
-		mFboMask.begin();
-		ofClear(ofColor::black);
-		ofSetColor(ofColor::white);
-		for (int i = 0; i < mBalls.size(); i++)
-		{
-			mBalls[i].draw();
-		}
-		mFboMask.end();
-
-		ofNoFill();
-		//mFboMask.draw(0, 0);
-
-		mFboMask.getTextureReference().bind(1);
-		//mShader.begin();
-
-		//mShader.setUniformTexture("texBack", backImage.getTextureReference(),0);
-		//mShader.setUniformTexture("imageMask", mFboMask.getTextureReference(),1);
-		mPlane.draw();
-
-		//mShader.end();
-		//mFboMask.getTextureReference().unbind();
-
-		//for (unsigned int i = 0; i < faceFinder.blobs.size(); i++) {
-		//	ofRectangle cur = faceFinder.blobs[i].boundingRect;
-		//	ofDrawRectangle(cur.x, cur.y, cur.width, cur.height);
+		//ofFill();
+		//mFboMask.begin();
+		//ofClear(ofColor::black);
+		//ofSetColor(ofColor::white);
+		//for (int i = 0; i < mBalls.size(); i++)
+		//{
+		//	mBalls[i].draw();
 		//}
+		//mFboMask.end();
+		//ofNoFill();
+		//mFboMask.getTextureReference().bind(1);
+		//
+		mShader.begin();
+		ofClear(ofColor::black);
+		mPlane.draw();
+		float runningTime = ofGetElapsedTimeMillis();
+		mShader.setUniform1f("iGlobalTime", runningTime);
+		mShader.setUniform2f("iResolution", ofVec2f(ofGetWindowWidth(), ofGetWindowHeight()));
+		mShader.setUniform4f("iMouse", ofVec4f(ofGetMouseX(), ofGetMouseY(), 0, 0));
+		mShader.setUniformTexture("iChannel0", backImage.getTextureReference(), 0);
+		//mShader.setUniformTexture("imageMask", mFboMask.getTextureReference(), 1);
+		mShader.end();
 	}
 }
 

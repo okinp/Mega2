@@ -4,7 +4,7 @@ uniform vec2			iResolution;
 uniform float			iGlobalTime;
 uniform vec4			iMouse;
 uniform sampler2DRect	iChannel0;
-//uniform	sampler2DRect	imageMask;
+uniform	sampler2DRect	imageMask;
 
 out vec4 outputColor;
 

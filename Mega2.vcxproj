@@ -414,9 +414,9 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="bin\data\shader.frag" />
-    <None Include="bin\data\shader.vert" />
     <None Include="bin\data\shaderClouds.frag" />
+    <None Include="bin\data\shaderClouds.vert" />
+    <None Include="bin\data\shaderC.frag" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ProjectExtensions>

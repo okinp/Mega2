@@ -820,13 +820,13 @@
     <ResourceCompile Include="icon.rc" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="bin\data\shader.frag">
-      <Filter>src</Filter>
-    </None>
-    <None Include="bin\data\shader.vert">
+    <None Include="bin\data\shaderC.frag">
       <Filter>src</Filter>
     </None>
     <None Include="bin\data\shaderClouds.frag">
+      <Filter>src</Filter>
+    </None>
+    <None Include="bin\data\shaderClouds.vert">
       <Filter>src</Filter>
     </None>
   </ItemGroup>
