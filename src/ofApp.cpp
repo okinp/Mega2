@@ -4,6 +4,8 @@
 void ofApp::setup(){
 	ofSetVerticalSync(true);
 	calcHomography.addListener(this, &ofApp::calculateHomography);
+
+
 	//cameraResolution.addListener(this, &ofApp::cameraResolutionChanged);
 	//videoScaling.addListener(this, &ofApp::videoScalingChanged);
 	//windowSize.addListener(this, &ofApp::windowSizeChanged);
@@ -18,32 +20,38 @@ void ofApp::setup(){
 	resizedImage.allocate(camWidth / scalingFactor, camHeight / scalingFactor, OF_IMAGE_COLOR);
 	winSize = windowSize.get();
 	ofSetWindowShape(winSize.x, winSize.y);
+
+	int w = 1280;
+	int h = 720;
+	ofSetWindowShape(w, h);
 	mShader.load("shaderClouds");
-	backImage.bind(0);
-	mPlane = ofPlanePrimitive(winSize.x, winSize.y, 2, 2);
+	backImage.loadImage("backImage.png");
+	backImage.bind(3);
+	mPlane = ofPlanePrimitive(w, h, 2, 2);
 	mPlane.mapTexCoordsFromTexture(backImage.getTextureReference());
-	mPlane.setPosition(winSize.x/2, winSize.y/2,0);
+	mPlane.setPosition(w/2, h/2,0);
 
 	debugCameraScaling = 2.f;  // ( 0.5 )
 	movingPoint = false;
 	homographyReady = false;
 	// load the previous homography if it's available
 	ofFile previous("homography.yml");
+	/*
 	if (previous.exists()) {
 		cv::FileStorage fs(ofToDataPath("homography.yml"), cv::FileStorage::READ);
 		fs["homography"] >> homography;
 		homographyReady = true;
 		ofLogNotice() << "Loaded homography";
 		homographyExists = true;
-	}
+	}*/
 
 
 
 	setupCamera();
 
-	setupHomography();
+	/*setupHomography();*/
 	faceFinder.setup("haarcascade_frontalface_alt.xml");
-	backImage.loadImage("backImage.png");
+
 	mFboMask.allocate(winSize.x, winSize.y);
 	
 }
@@ -101,10 +109,10 @@ void ofApp::setupCamera()
 	}
 
 	vidGrabber.setDeviceID(cameraIndex.get());
-	vidGrabber.setDesiredFrameRate(60);
+	vidGrabber.setDesiredFrameRate(30);
 	vidGrabber.initGrabber(camWidth, camHeight);
-	videoTexture.allocate(camWidth, camHeight, OF_PIXELS_RGB);
-	ofSetVerticalSync(true);
+	//videoTexture.allocate(camWidth, camHeight, OF_PIXELS_RGB);
+	//ofSetVerticalSync(true);
 }
 
 void ofApp::setupHomography()
@@ -194,13 +202,13 @@ void ofApp::updateCamera()
 {
 	vidGrabber.update();
 
-	if (vidGrabber.isFrameNew()) {
-		if (!mCameraStarted)
-		{
-			mCameraStarted = true;
-		}
-		findFaces();
-	}
+	//if (vidGrabber.isFrameNew()) {
+	//	if (!mCameraStarted)
+	//	{
+	//		mCameraStarted = true;
+	//	}
+	//	//findFaces();
+	//}
 }
 
 void ofApp::findFaces()
@@ -235,15 +243,15 @@ void ofApp::findFaces()
 //--------------------------------------------------------------
 void ofApp::update() {
 	updateCamera();
-	applyHomography();
+	//applyHomography();
 }
 //--------------------------------------------------------------
 void ofApp::draw(){
-	if (showDebug)
+	/* if (showDebug)
 	{
 		drawDebugView();
 	}
-	else {
+	else {*/
 		//Render circles to FBO
 		//ofFill();
 		//mFboMask.begin();
@@ -257,17 +265,21 @@ void ofApp::draw(){
 		//ofNoFill();
 		//mFboMask.getTextureReference().bind(1);
 		//
+	if (true)
+	{
 		mShader.begin();
 		ofClear(ofColor::black);
 		mPlane.draw();
 		float runningTime = ofGetElapsedTimeMillis();
-		mShader.setUniform1f("iGlobalTime", runningTime);
+		mShader.setUniform1f("iGlobalTime", 0);
 		mShader.setUniform2f("iResolution", ofVec2f(ofGetWindowWidth(), ofGetWindowHeight()));
 		mShader.setUniform4f("iMouse", ofVec4f(ofGetMouseX(), ofGetMouseY(), 0, 0));
-		mShader.setUniformTexture("iChannel0", backImage.getTextureReference(), 0);
+		mShader.setUniformTexture("iChannel0", backImage.getTextureReference(), 3);
 		//mShader.setUniformTexture("imageMask", mFboMask.getTextureReference(), 1);
 		mShader.end();
+		showNext = false;
 	}
+	/*}*/
 }
 
 void ofApp::exit()
@@ -317,6 +329,10 @@ void ofApp::keyPressed(int key){
 	}
 	if (key == 'l') {
 		gui.loadFromFile("settings.xml");
+	}
+	if (key == 'q')
+	{
+		showNext = true;
 	}
 }
 
