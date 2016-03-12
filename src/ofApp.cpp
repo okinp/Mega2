@@ -271,7 +271,7 @@ void ofApp::draw(){
 		ofClear(ofColor::black);
 		mPlane.draw();
 		float runningTime = ofGetElapsedTimeMillis();
-		mShader.setUniform1f("iGlobalTime", 0);
+		mShader.setUniform1f("iGlobalTime", runningTime);
 		mShader.setUniform2f("iResolution", ofVec2f(ofGetWindowWidth(), ofGetWindowHeight()));
 		mShader.setUniform4f("iMouse", ofVec4f(ofGetMouseX(), ofGetMouseY(), 0, 0));
 		mShader.setUniformTexture("iChannel0", backImage.getTextureReference(), 3);
