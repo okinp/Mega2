@@ -4,6 +4,9 @@
 //========================================================================
 int main( ){
 	ofGLWindowSettings settings;
+	settings.width = 1280;
+	settings.height = 720;
+	settings.windowMode = OF_GAME_MODE;
 	settings.setGLVersion(3, 2);
 	ofCreateWindow(settings);
 	// this kicks off the running of my app

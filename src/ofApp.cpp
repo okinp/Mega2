@@ -2,7 +2,6 @@
 
 //--------------------------------------------------------------
 void ofApp::setup(){
-	//ofSetVerticalSync(true);
 	calcHomography.addListener(this, &ofApp::calculateHomography);
 	setupGui();
 	gui.loadFromFile("settings.xml");
@@ -12,12 +11,10 @@ void ofApp::setup(){
 	camWidth = camSize.x;
 	camHeight = camSize.y;
 	resizedImage.allocate(camWidth / scalingFactor, camHeight / scalingFactor, OF_IMAGE_COLOR);
-	winSize = windowSize.get();
-	ofSetWindowShape(winSize.x, winSize.y);
+	int w = ofGetWindowWidth();
+	int h = ofGetWindowHeight();
+	winSize = ofVec2f(w, h);
 
-	int w = 1280;
-	int h = 720;
-	ofSetWindowShape(w, h);
 	
 	mShader.load("shaderClouds");
 	backImage.loadImage("backImage.png");
@@ -39,15 +36,12 @@ void ofApp::setup(){
 		homographyExists = true;
 	}
 
-
-
 	setupCamera();
 
 	setupHomography();
 	faceFinder.setup("haarcascade_frontalface_alt.xml");
 
 	mFboMask.allocate(winSize.x, winSize.y);
-	
 }
 
 void ofApp::cameraResolutionChanged()
@@ -72,9 +66,8 @@ void ofApp::setupGui()
 
 	showDebug = false;
 	gui.setup("");
-	gui.add(calcHomography.setup("Calculate Homography"));
+	//gui.add(calcHomography.setup("Calculate Homography"));
 	gui.add(cameraResolution.set("cameraResolution", ofVec2f(640, 480), ofVec2f(320, 240), ofVec2f(1280, 720)));
-	gui.add(windowSize.set("screenSize", ofVec2f(1280, 720), ofVec2f(640, 360), ofVec2f(1920, 1080)));
 	gui.add(videoScaling.set("videoScaling", 1, 1, 10));
 	gui.add(cameraIndex.set("cameraIndex", 1, 0, 2));
 	gui.add(p0.set("p0", ofVec2f(0, 0), ofVec2f(0, 0), ofVec2f(w,h)));
@@ -324,6 +317,10 @@ void ofApp::keyPressed(int key){
 	{
 		screenshot.grabScreen(0, 0, ofGetWidth(), ofGetHeight());
 		screenshot.save("screenshot.png");
+	}
+	if (key == 'f')
+	{
+		ofToggleFullscreen();
 	}
 }
 

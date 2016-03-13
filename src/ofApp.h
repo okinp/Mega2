@@ -30,7 +30,6 @@ class ofApp : public ofBaseApp{
 		ofxPanel				gui;
 		ofxButton				calcHomography;
 		ofParameter<ofVec2f>	cameraResolution;
-		ofParameter<ofVec2f>	windowSize;
 		ofParameter<ofVec2f>	p0, p1, p2, p3;
 		ofParameter<float>		videoScaling, pScale;
 		ofParameter<int>		cameraIndex;

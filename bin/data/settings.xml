@@ -2,12 +2,12 @@
 	<group/>
 <cameraResolution>640, 480</cameraResolution>
 	<screenSize>1280, 720</screenSize>
-	<videoScaling>1</videoScaling>
+	<videoScaling>4</videoScaling>
 <cameraIndex>0</cameraIndex>
 
 <p0>61, 36</p0>
 	<p1>53, 413</p1>
 	<p2>342, 401</p2>
 	<p3>386, 10</p3>
-<CircleScaling>1.46</CircleScaling>
+<CircleScaling>1.5</CircleScaling>
 </group>
