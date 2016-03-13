@@ -320,6 +320,11 @@ void ofApp::keyPressed(int key){
 	if (key == 'l') {
 		gui.loadFromFile("settings.xml");
 	}
+	if (key == 'x')
+	{
+		screenshot.grabScreen(0, 0, ofGetWidth(), ofGetHeight());
+		screenshot.save("screenshot.png");
+	}
 }
 
 //--------------------------------------------------------------
