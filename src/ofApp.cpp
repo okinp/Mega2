@@ -318,10 +318,6 @@ void ofApp::keyPressed(int key){
 		screenshot.grabScreen(0, 0, ofGetWidth(), ofGetHeight());
 		screenshot.save("screenshot.png");
 	}
-	if (key == 'f')
-	{
-		ofToggleFullscreen();
-	}
 }
 
 //--------------------------------------------------------------
