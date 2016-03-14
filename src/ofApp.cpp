@@ -2,6 +2,8 @@
 
 //--------------------------------------------------------------
 void ofApp::setup(){
+	camWidth = CAMERA_WIDTH;  // try to grab at this size.
+	camHeight = CAMERA_HEIGHT;
 	calcHomography.addListener(this, &ofApp::calculateHomography);
 	setupGui();
 	gui.loadFromFile("settings.xml");
@@ -11,17 +13,23 @@ void ofApp::setup(){
 	camWidth = camSize.x;
 	camHeight = camSize.y;
 	resizedImage.allocate(camWidth / scalingFactor, camHeight / scalingFactor, OF_IMAGE_COLOR);
-	int w = ofGetWindowWidth();
-	int h = ofGetWindowHeight();
-	winSize = ofVec2f(w, h);
 
+	winSize = ofVec2f(PROJECTOR_WIDTH, PROJECTOR_HEIGHT);
+	/*---*/
+	hasNewCircle = false;
+	minRadius = 20.0f;
+	curRadius = minRadius;
+	circlesArraySize = MAX_CIRCLES;
+	filtCircles.initFilter(HIST_SIZE);
+
+	circleRadius = 200;
 	
-	mShader.load("shaderClouds");
+	mShader.load("shader");
 	backImage.loadImage("backImage.png");
-	backImage.bind(3);
-	mPlane = ofPlanePrimitive(w, h, 2, 2);
+	//backImage.bind(3);
+	mPlane = ofPlanePrimitive(PROJECTOR_WIDTH, PROJECTOR_HEIGHT, 2, 2);
 	mPlane.mapTexCoordsFromTexture(backImage.getTextureReference());
-	mPlane.setPosition(w/2, h/2,0);
+	mPlane.setPosition(PROJECTOR_WIDTH/2, PROJECTOR_HEIGHT/2,0);
 
 	debugCameraScaling = 2.f;  // ( 0.5 )
 	movingPoint = false;
@@ -61,20 +69,19 @@ void ofApp::videoScalingChanged()
 
 void ofApp::setupGui()
 {
-	int h = 720;
-	int w = 1280;
+	int h = PROJECTOR_HEIGHT;
+	int w = PROJECTOR_WIDTH;
 
 	showDebug = false;
 	gui.setup("");
 	//gui.add(calcHomography.setup("Calculate Homography"));
 	gui.add(cameraResolution.set("cameraResolution", ofVec2f(640, 480), ofVec2f(320, 240), ofVec2f(1280, 720)));
-	gui.add(videoScaling.set("videoScaling", 1, 1, 10));
+	gui.add(videoScaling.set("videoScaling", 4, 1, 10));
 	gui.add(cameraIndex.set("cameraIndex", 1, 0, 2));
 	gui.add(p0.set("p0", ofVec2f(0, 0), ofVec2f(0, 0), ofVec2f(w,h)));
-	gui.add(p1.set("p1", ofVec2f(0, 480), ofVec2f(0, 0), ofVec2f(w,h)));
-	gui.add(p2.set("p2", ofVec2f(640, 480), ofVec2f(0, 0), ofVec2f(w,h)));
-	gui.add(p3.set("p3", ofVec2f(0, 0), ofVec2f(0, 0), ofVec2f(w,h)));
-	gui.add(pScale.set("CircleScaling", 1, 0, 4));
+	gui.add(p1.set("p1", ofVec2f(0, CAMERA_HEIGHT), ofVec2f(0, 0), ofVec2f(w,h)));
+	gui.add(p2.set("p2", ofVec2f(CAMERA_WIDTH, CAMERA_HEIGHT), ofVec2f(0, 0), ofVec2f(w,h)));
+	gui.add(p3.set("p3", ofVec2f(CAMERA_WIDTH, 0), ofVec2f(0, 0), ofVec2f(w,h)));
 }
 
 void ofApp::setupCamera()
@@ -98,8 +105,7 @@ void ofApp::setupCamera()
 	vidGrabber.setDeviceID(cameraIndex.get());
 	vidGrabber.setDesiredFrameRate(30);
 	vidGrabber.initGrabber(camWidth, camHeight);
-	//videoTexture.allocate(camWidth, camHeight, OF_PIXELS_RGB);
-	//ofSetVerticalSync(true);
+
 }
 
 void ofApp::setupHomography()
@@ -120,6 +126,7 @@ void ofApp::setupHomography()
 }
 void ofApp::drawHomographyPoints()
 {
+	ofPushStyle();
 	ofNoFill();
 	ofSetColor(ofColor::red);
 	for (int i = 0; i < calibrationPoints.size(); i++) 
@@ -132,7 +139,9 @@ void ofApp::drawHomographyPoints()
 	ofDrawLine(calibrationPoints[2], calibrationPoints[3]);
 	ofDrawLine(calibrationPoints[3], calibrationPoints[0]);
 	ofSetColor(ofColor::white);
+	ofPopStyle();
 }
+
 
 void ofApp::calculateHomography()
 {
@@ -167,14 +176,12 @@ void ofApp::applyHomography()
 			dst.push_back(p);
 		}
 		cv::perspectiveTransform(cv::Mat(src), cv::Mat(dst), homography);
-		mBalls.clear();
+
+
 		for (int i = 0; i < faceFinder.blobs.size(); i++)
 		{
-			ofRectangle cur = mFaceRects[i];
-			cur.position = ofVec2f(dst[i].x, dst[i].y);
-			kyra::Ball b(cur.width / pScale.get());
-			b.mPosition = cur.position;
-			mBalls.push_back(b);
+			
+			mFaceRects[i].position = ofVec2f(dst[i].x, dst[i].y);
 		}
 		//ofLogNotice() << "Applied Homography";
 		if (saveMatrix) {
@@ -185,8 +192,9 @@ void ofApp::applyHomography()
 		}
 	}
 }
-void ofApp::updateCamera()
+bool ofApp::updateCamera()
 {
+	bool isFrameNew = false;
 	vidGrabber.update();
 
 	if (vidGrabber.isFrameNew()) {
@@ -195,7 +203,9 @@ void ofApp::updateCamera()
 			mCameraStarted = true;
 		}
 		findFaces();
+		isFrameNew = true;
 	}
+	return isFrameNew;
 }
 
 void ofApp::findFaces()
@@ -227,42 +237,80 @@ void ofApp::findFaces()
 	}
 }
 
+void ofApp::growCircle()
+{
+	if (hasNewCircle)
+		curRadius += 1;
+	curRadius = ofClamp(curRadius, minRadius, circleRadius);
+	//cout << "curRadius = " << curRadius<<  endl;
+}
+void ofApp::makeCircles()
+{
+	//circles[0]=ofVec2f(ofGetMouseX(), ofGetWindowHeight()-ofGetMouseY());
+	circlesArraySize = 0;
+	if (mFaceRects.size() > 0)
+	{
+		filtCircles.addElement(ofVec2f(mFaceRects[0].x, ofGetWindowHeight() - mFaceRects[0].y));
+		circles[0] = filtCircles.getAverage();
+
+		circlesArraySize = 1;
+
+		if (!hasNewCircle) hasNewCircle = true;
+	}
+	else
+	{
+		circles[0] = ofVec2f(0, 0);
+		circlesArraySize = 0;
+		hasNewCircle = false;
+		curRadius = minRadius;
+	}
+	growCircle();
+}
 //--------------------------------------------------------------
 void ofApp::update() {
-	updateCamera();
-	applyHomography();
+	if (updateCamera())
+	{
+		applyHomography();
+		makeCircles();
+	}
+
 }
 //--------------------------------------------------------------
 void ofApp::draw(){
 	if (showDebug)
 	{
+		ofShowCursor();
 		drawDebugView();
+		if (homographyReady)
+		{
+			drawRects();
+		}
 	}
 	else {
+		ofHideCursor();
 		//Render circles to FBO
-		ofFill();
-		mFboMask.begin();
-		ofClear(ofColor::black);
-		ofSetColor(ofColor::white);
-		for (int i = 0; i < mBalls.size(); i++)
-		{
-			mBalls[i].draw();
-		}
-		mFboMask.end();
-		ofNoFill();
-		mFboMask.getTextureReference().bind(4);
-
 		mShader.begin();
-		ofClear(ofColor::black);
-		mPlane.draw();
+		ofClear(0, 0, 0, 0);
 		float runningTime = ofGetElapsedTimeMillis();
+		mShader.setUniform2fv("circles", (float *)circles);
+		mShader.setUniform1i("circlesArraySize", circlesArraySize);
 		mShader.setUniform1f("iGlobalTime", runningTime);
+		mShader.setUniform1f("iCircleRadius", curRadius);
 		mShader.setUniform2f("iResolution", ofVec2f(ofGetWindowWidth(), ofGetWindowHeight()));
-		mShader.setUniform4f("iMouse", ofVec4f(ofGetMouseX(), ofGetMouseY(), 0, 0));
-		mShader.setUniformTexture("iChannel0", backImage.getTextureReference(), 3);
-		mShader.setUniformTexture("imageMask", mFboMask.getTextureReference(), 4);
+		backImage.draw(0, 0, PROJECTOR_WIDTH, PROJECTOR_HEIGHT);
 		mShader.end();
 	}
+}
+void ofApp::drawRects()
+{
+	ofPushStyle();
+	ofNoFill();
+	ofSetColor(ofColor::blue);
+	for (unsigned int i = 0; i < mFaceRects.size(); i++)
+	{
+		ofDrawCircle(mFaceRects[i].position, 10);
+	}
+	ofPopStyle();
 }
 
 void ofApp::exit()
@@ -281,16 +329,13 @@ void ofApp::printCvMat(cv::Mat mat)
 }
 void ofApp::drawDebugView()
 {
+	ofPushStyle();
+
 	mCurrentVideoFrame.draw(0, 0);
 	drawHomographyPoints();
-
-	//ofVec2f offset(winSize.x - camWidth/debugCameraScaling, 0);
-	//videoTexture.draw(20, 20, camWidth / debugCameraScaling, camHeight / debugCameraScaling);
-	//videoTexture.draw(offset.x, 0, camWidth/ debugCameraScaling, camHeight/ debugCameraScaling);
-	//videoTexture.draw(0, 0, camWidth, camHeight);
-	//backImage.draw(640, 360, 640, 360);
-	//drawHomographyPoints( offset, debugCameraScaling );
 	gui.draw();
+
+	ofPopStyle();
 }
 void ofApp::movePoint(vector<ofVec2f>& points, ofVec2f point)
 {
@@ -317,6 +362,43 @@ void ofApp::keyPressed(int key){
 	{
 		screenshot.grabScreen(0, 0, ofGetWidth(), ofGetHeight());
 		screenshot.save("screenshot.png");
+	}
+	if (key == 'f')
+	{
+		ofToggleFullscreen();
+	}
+
+	if (key == '+')
+	{
+		circleRadius++;
+		cout << "circleRadius = " << circleRadius << endl;
+	}
+
+	if (key == '-')
+	{
+		circleRadius--;
+		cout << "circleRadius = " << circleRadius << endl;
+	}
+
+}
+void ofApp::saveHomography()
+{
+	ofLogNotice() << "Saved Homography";
+	cv::FileStorage fs(ofToDataPath("homography.yml"), cv::FileStorage::WRITE);
+	fs << "homography" << homography;
+	fs << "circleRadius" << circleRadius;
+}
+
+void ofApp::loadHomography()
+{
+	ofFile previous("homography.yml");
+	if (previous.exists()) {
+		cv::FileStorage fs(ofToDataPath("homography.yml"), cv::FileStorage::READ);
+		fs["homography"] >> homography;
+		fs["circleRadius"] >> circleRadius;
+		homographyReady = true;
+		ofLogNotice() << "Loaded homography";
+		ofHideCursor();
 	}
 }
 
